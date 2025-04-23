@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DosTeam</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fdfdfd;
+      color: #111;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background-color: #111;
+      color: #fdfdfd;
+    }
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      z-index: 1000;
+    }
+    body.dark nav {
+      background: #222;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+    nav ul li {
+      margin: 0;
+    }
+    nav ul li a {
+      display: block;
+      padding: 16px 24px;
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: background 0.3s;
+    }
+    body.dark nav ul li a {
+      color: #ddd;
+    }
+    nav ul li a:hover {
+      background: #f0f0f0;
+    }
+    body.dark nav ul li a:hover {
+      background: #333;
+    }
+    .view {
+      display: none;
+      padding: 100px 20px 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 500px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      margin: 8px 0;
+      border-radius: 16px;
+      background-color: #f1f1f1;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .me {
+      align-self: flex-end;
+      background-color: #daf0ff;
+    }
+    .sender {
+      font-size: 12px;
+      color: #777;
+      margin-bottom: 4px;
+    }
+    .input-container {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #chat-input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .send-btn {
+      padding: 10px 16px;
+      background: #007bff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .upload-btn {
+      padding: 10px;
+      background: #eee;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+    .circle-video {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    #status-message {
+      font-size: 14px;
+      color: #007bff;
+      margin-left: 5px;
+    }
+    .dimmed {
+      background-color: rgba(0,0,0,0.05);
+    }
+    .circle-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      border: 4px solid #007bff;
+      animation: circleAnim 2s linear infinite;
+    }
+    @keyframes circleAnim {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="#" onclick="showView('main')">Главный</a></li>
+      <li><a href="#" onclick="showView('about')">Чем мы занимаемся</a></li>
+      <li><a href="#" onclick="showView('tracks')">Треки</a></li>
+      <li><a href="#" onclick="showChat()">Чат</a></li>
+    </ul>
+  </nav>
+
+  <div id="main" class="view active">
+    <h1>Главный</h1>
+    <p>Информация о нас. Позже дополним.</p>
+  </div>
+
+  <div id="about" class="view">
+    <h1>Чем мы занимаемся</h1>
+    <p>Наши проекты и интересы. Страница будет развиваться.</p>
+  </div>
+
+  <div id="tracks" class="view">
+    <h1>Треки</h1>
+    <audio controls style="width:100%">
+      <source src="муз.mp3" type="audio/mp3">
+      Ваш браузер не поддерживает аудио элемент.
+    </audio>
+  </div>
+
+  <div id="chat" class="view">
+    <h1>Скрытный чат</h1>
+    <div class="chat-container">
+      <div id="messages" class="messages"></div>
+      <div class="input-container">
+        <input type="text" id="chat-input" placeholder="Напиши что-нибудь...">
+        <label class="upload-btn">📷<input type="file" id="file-input" accept="image/*,video/*,audio/*" onchange="sendMedia(event)"></label>
+        <label class="upload-btn" onmousedown="startRecordingVideo()" onmouseup="stopRecordingVideo()">🎥</label>
+        <label class="upload-btn" onmousedown="startRecordingAudio()" onmouseup="stopRecordingAudio()">🎙️</label>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+        <span id="status-message"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let statusMsg = document.getElementById('status-message');
+
+    function showView(id) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showChat() {
+      const pass = prompt("Введите пароль");
+      if (pass === "2022") {
+        showView('chat');
+        loadMessages();
+      } else {
+        alert("Неверный пароль");
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      messages.push({ sender: 'Вы', type: 'text', content: text });
+      localStorage.setItem('messages', JSON.stringify(messages));
+      input.value = '';
+      loadMessages();
+    }
+
+    function sendMedia(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const url = e.target.result;
+        const type = file.type.startsWith('image') ? 'image' :
+                     file.type.startsWith('video') ? 'video' :
+                     file.type.startsWith('audio') ? 'audio' : 'file';
+        const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+        messages.push({ sender: 'Вы', type, content: url });
+        localStorage.setItem('messages', JSON.stringify(messages));
+        loadMessages();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    let videoRecorder, videoChunks = [], videoTimeout;
+
+    function startRecordingVideo() {
+      statusMsg.innerText = 'Видео жазылып жатыр...';
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+          videoRecorder = new MediaRecorder(stream);
+          videoChunks = [];
+          videoRecorder.ondataavailable = e => videoChunks.push(e.data);
+          videoRecorder.onstop = () => {
+            statusMsg.innerText = 'Сақталып жатыр...';
+            const blob = new Blob(videoChunks, { type: 'video/webm' });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const url = e.target.result;
+              const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+              messages.push({ sender: 'Вы', type: 'circle-video', content: url });
+              localStorage.setItem('messages', JSON.stringify(messages));
+              statusMsg.innerText = 'Жіберілді!';
+              setTimeout(() => statusMsg.innerText = '', 1500);
+              loadMessages();
+            };
+            reader.readAsDataURL(blob);
+          };
+          videoRecorder.start();
+          videoTimeout = setTimeout(stopRecordingVideo, 120000);
+        })
+        .catch(() => alert("Нет доступа к камере"));
+    }
+
+    function stopRecordingVideo() {
+      if (videoRecorder && videoRecorder.state !== 'inactive') {
+        videoRecorder.stop();
+        clearTimeout(videoTimeout);
+      }
+    }
+
+    let audioRecorder, audioChunks = [], audioTimeout;
+
+    function startRecordingAudio() {
+      statusMsg.innerText = 'Жазылып жатыр...';
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          audioRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          audioRecorder.ondataavailable = e => audioChunks.push(e.data);
+          audioRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const url = e.target.result;
+              const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+              messages.push({ sender: 'Вы', type: 'audio', content: url });
+              localStorage.setItem('messages', JSON.stringify(messages));
+              statusMsg.innerText = 'Жіберілді!';
+              setTimeout(() => statusMsg.innerText = '', 1500);
+              loadMessages();
+            };
+            reader.readAsDataURL(blob);
+          };
+          audioRecorder.start();
+          audioTimeout = setTimeout(stopRecordingAudio, 120000);
+        })
+        .catch(() => alert("Нет доступа к микрофону"));
+    }
+
+    function stopRecordingAudio() {
+      if (audioRecorder && audioRecorder.state !== 'inactive') {
+        audioRecorder.stop();
+        clearTimeout(audioTimeout);
+      }
+    }
+
+    function loadMessages() {
+      const messagesContainer = document.getElementById('messages');
+      messagesContainer.innerHTML = '';
+      const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message me';
+        let content = '';
+        if (msg.type === 'text') {
+          content = `<div class="sender">${msg.sender}</div>${msg.content}`;
+        } else if (msg.type === 'image') {
+          content = `<div class="sender">${msg.sender}</div><img src="${msg.content}" style="max-width: 100%; border-radius: 12px;">`;
+        } else if (msg.type === 'video') {
+          content = `<div class="sender">${msg.sender}</div><video controls style="max-width: 100%; border-radius: 12px;"><source src="${msg.content}"></video>`;
+        } else if (msg.type === 'audio') {
+          content = `<div class="sender">${msg.sender}</div><audio controls style="width: 100%;"><source src="${msg.content}"></audio>`;
+        } else if (msg.type === 'circle-video') {
+          content = `<div class="sender">${msg.sender}</div><div class="circle-video"><video autoplay loop muted controls style="width: 100%; height: 100%; object-fit: cover;"><source src="${msg.content}"></video></div>`;
+        } else {
+          content = `<div class="sender">${msg.sender}</div><a href="${msg.content}" download>Скачать файл</a>`;
+        }
+        div.innerHTML = content;
+        messagesContainer.appendChild(div);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  </script>
+</body>
+</html>
